@@ -4,7 +4,7 @@ message: >-
   curated and publicly released by Shadow.
 title: >-
   AI-Generated Candidate Solution to the Steiner–Wiener 4-Index Inverse Problem
-version: 1.0.0
+version: 0.1.0-candidate
 date-released: 2026-07-26
 type: dataset
 authors:
