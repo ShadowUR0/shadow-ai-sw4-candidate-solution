@@ -1,4 +1,5 @@
 # Public manuscript preparation workflow. A repository administrator may also run it manually.
+# Triggered to prepare the corrected public manuscript and compiled PDF.
 name: Prepare public candidate manuscript
 
 on:
