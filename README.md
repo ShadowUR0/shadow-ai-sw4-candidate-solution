@@ -33,6 +33,17 @@ This must be treated as a **candidate result**, not as an accepted theorem, unti
 
 The public manuscript includes a transparent AI-provenance notice, identifies Shadow as curator and public releaser, and contains no placeholder author fields.
 
+## Independent verification requested
+
+Qualified mathematicians and computational researchers are invited to audit, reproduce, correct, or refute the candidate.
+
+- See `REVIEW_GUIDE.md` for a structured audit order and critical checkpoints.
+- See `RELATED_WORK.md` for the closest published and preprint literature.
+- Use [GitHub Issue #4](https://github.com/ShadowUR0/shadow-ai-sw4-candidate-solution/issues/4) for review status or open a separate issue for a specific defect.
+- `RELEASE_NOTES.md` contains the prepared metadata for the initial candidate release.
+
+A full-paper endorsement is not requested. A counterexample, precise logical gap, failed reproduction, or independently reproduced certificate is useful.
+
 ## Verification programs
 
 ### Python
