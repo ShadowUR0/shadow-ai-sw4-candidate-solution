@@ -3,6 +3,7 @@ name: Prepare public candidate manuscript
 on:
   push:
     branches:
+      - main
       - organize-public-release
     paths:
       - .github/workflows/prepare-public-manuscript.yml
@@ -23,7 +24,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          ref: organize-public-release
+          ref: ${{ github.ref_name }}
 
       - name: Add public provenance and candidate status
         shell: bash
@@ -116,5 +117,5 @@ result. The complete public archive is available at
             echo "No manuscript changes to commit."
           else
             git commit -m "Prepare transparent public candidate manuscript [prepared-manuscript]"
-            git push origin HEAD:organize-public-release
+            git push origin HEAD:${GITHUB_REF_NAME}
           fi
