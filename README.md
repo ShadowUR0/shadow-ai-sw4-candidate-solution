@@ -23,13 +23,14 @@ Equivalently, it claims that exactly 14,099 positive integers are not realizable
 
 This must be treated as a **candidate result**, not as an accepted theorem, until it has received independent expert verification.
 
-## Manuscript
+## Manuscript status
 
-- `sw4_inverse_problem_paper.tex` — public LaTeX manuscript
-- `sw4_inverse_problem_paper.pdf` — compiled manuscript
+- `sw4_inverse_problem_paper.tex` — uploaded LaTeX manuscript source
 - `sw4_self_contained_solution.md` — self-contained solution draft
 - `sw4_infinite_tail_proof.md` — standalone infinite-tail argument
 - `sw4_verification_report.md` — internal verification report
+
+**Important:** the originally uploaded LaTeX source contains placeholder author fields. The repository includes `.github/workflows/prepare-public-manuscript.yml`, which is designed to replace those placeholders with a transparent AI-provenance notice and compile `sw4_inverse_problem_paper.pdf`. Before distributing the PDF, confirm that the workflow has completed successfully and that no placeholder remains.
 
 ## Verification programs
 
@@ -87,7 +88,7 @@ To check the original reproducibility-bundle manifest:
 sha256sum -c sw4_self_contained_sha256.txt
 ```
 
-The public manuscript and repository metadata were added after the original bundle was generated, so they are not part of that original manifest.
+The public manuscript metadata and repository metadata were added after the original bundle was generated, so they are not part of that original manifest.
 
 ## How to review the claim
 
