@@ -1,0 +1,122 @@
+name: Prepare public candidate manuscript
+
+on:
+  push:
+    branches:
+      - organize-public-release
+    paths:
+      - .github/workflows/prepare-public-manuscript.yml
+      - sw4_inverse_problem_paper.tex
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      !contains(github.event.head_commit.message, '[prepared-manuscript]')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: organize-public-release
+
+      - name: Add public provenance and candidate status
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("sw4_inverse_problem_paper.tex")
+          text = path.read_text(encoding="utf-8")
+
+          text = text.replace(
+              "pdfauthor={[AUTHOR NAME]}",
+              "pdfauthor={Shadow (curator and public releaser)}",
+          )
+
+          text = text.replace(
+              """\\title{The Steiner--Wiener $4$-Index Inverse Problem for Finite Trees:\\\\
+          A Complete Computer-Assisted Solution}
+          \\author{\\texttt{[AUTHOR NAME]}\\\\
+          \\texttt{[AFFILIATION]}\\\\
+          \\texttt{[EMAIL]}\\\\
+          ORCID: \\texttt{[ORCID]}}""",
+              """\\title{An AI-Generated Candidate Solution to the\\\\
+          Steiner--Wiener $4$-Index Inverse Problem for Finite Trees}
+          \\author{AI-generated research artifact\\\\
+          \\small Curated, archived, and publicly released by Shadow\\\\
+          \\small Released for independent mathematical verification}""",
+          )
+
+          text = text.replace(
+              "We determine exactly which positive integers fail to occur\\nas such an index.  The proof combines",
+              "This manuscript presents a candidate determination of which positive integers fail to occur\\nas such an index.  The candidate proof combines",
+          )
+
+          marker = "\\section*{Provenance and verification status}"
+          if marker not in text:
+              text = text.replace(
+                  "\\end{abstract}\n\n\\noindent\\textbf{Keywords.}",
+                  """\\end{abstract}
+
+          \\section*{Provenance and verification status}
+
+          The mathematical derivations, proof construction, manuscript text, source
+          code, computational certificates, and internal checks in this release were
+          generated through extended ChatGPT sessions initiated by Shadow.  Shadow
+          curated, archived, and publicly released the resulting materials, but does not
+          claim mathematical authorship and has not independently verified the proof.
+          No independent human expert review has yet been completed.
+
+          This manuscript is therefore released as an unverified candidate solution.
+          Its purpose is to provide a public, reproducible record and invite qualified
+          mathematicians to examine, reproduce, confirm, correct, or refute the claimed
+          result.  The complete public archive is available at
+          \\url{https://github.com/ShadowUR0/shadow-ai-sw4-candidate-solution}.
+
+          \\noindent\\textbf{Keywords.}""",
+                  1,
+              )
+
+          text = text.replace(
+              "\\texttt{[AUTHOR NAME]},\n\\emph{Supplementary exact certificates",
+              "Shadow AI Mathematics Project,\n\\emph{Supplementary exact certificates",
+          )
+
+          text = text.replace(
+              "accompanying reproducibility archive,\nSHA-256",
+              "public reproducibility archive,\\\\\n"
+              "\\url{https://github.com/ShadowUR0/shadow-ai-sw4-candidate-solution},\n"
+              "SHA-256",
+          )
+
+          if "[AUTHOR NAME]" in text or "[AFFILIATION]" in text or "[ORCID]" in text:
+              raise SystemExit("Author placeholders remain after transformation")
+
+          path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Compile LaTeX manuscript
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: sw4_inverse_problem_paper.tex
+          latexmk_use_xelatex: false
+          args: -pdf -interaction=nonstopmode -halt-on-error
+
+      - name: Commit prepared manuscript and PDF
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sw4_inverse_problem_paper.tex sw4_inverse_problem_paper.pdf
+          if git diff --cached --quiet; then
+            echo "No manuscript changes to commit."
+          else
+            git commit -m "Prepare transparent public candidate manuscript [prepared-manuscript]"
+            git push origin HEAD:organize-public-release
+          fi
