@@ -1,9 +1,8 @@
 name: Prepare public candidate manuscript
 
 on:
-  issues:
-    types:
-      - opened
+  schedule:
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -11,9 +10,6 @@ permissions:
 
 jobs:
   prepare:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      github.event.issue.title == 'Prepare corrected manuscript'
     runs-on: ubuntu-latest
 
     steps:
