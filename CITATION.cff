@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: >-
+  Please cite this release as an unverified AI-generated candidate solution
+  curated and publicly released by Shadow.
+title: >-
+  AI-Generated Candidate Solution to the Steiner–Wiener 4-Index Inverse Problem
+version: 1.0.0
+date-released: 2026-07-26
+type: dataset
+authors:
+  - name: Shadow AI Mathematics Project
+abstract: >-
+  A public reproducibility archive for an AI-generated candidate solution to
+  the Steiner–Wiener 4-index inverse problem. Shadow curated, archived, and
+  publicly released the artifact but does not claim mathematical authorship or
+  independent verification. No independent human expert review had been
+  completed at the time of this release.
+repository-code: https://github.com/ShadowUR0/shadow-ai-sw4-candidate-solution
+url: https://github.com/ShadowUR0/shadow-ai-sw4-candidate-solution
+license: CC-BY-4.0 AND MIT
+keywords:
+  - Steiner–Wiener index
+  - graph theory
+  - finite trees
+  - computer-assisted proof
+  - candidate solution
+  - independent verification
