@@ -1,0 +1,1399 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs,longtable,array}
+\usepackage{enumitem}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{xurl}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\usepackage{pdflscape}
+\usepackage{listings}
+
+\geometry{margin=1in}
+\allowdisplaybreaks
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!45!black,
+  citecolor=blue!45!black,
+  urlcolor=blue!45!black,
+  pdftitle={The Steiner--Wiener 4-index inverse problem for finite trees},
+  pdfauthor={[AUTHOR NAME]}
+}
+\setlist{nosep}
+\setlength{\emergencystretch}{3em}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{certificate}[theorem]{Computer-assisted certificate}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\SW}{\operatorname{SW}_4}
+\newcommand{\Tfour}{\mathcal T_4}
+\newcommand{\N}{\mathbb N}
+\newcommand{\C}[2]{\binom{#1}{#2}}
+\newcommand{\set}[1]{\left\{#1\right\}}
+\newcommand{\interval}[2]{\left[#1,#2\right]}
+\newcommand{\Mink}{\mathbin{+}}
+\newcommand{\code}[1]{\nolinkurl{#1}}
+
+\title{The Steiner--Wiener $4$-Index Inverse Problem for Finite Trees:\\
+A Complete Computer-Assisted Solution}
+\author{\texttt{[AUTHOR NAME]}\\
+\texttt{[AFFILIATION]}\\
+\texttt{[EMAIL]}\\
+ORCID: \texttt{[ORCID]}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+For a finite tree $T$, the Steiner--Wiener $4$-index is the sum, over all
+four-element vertex sets, of the number of edges in the minimal subtree
+spanning the set.  We determine exactly which positive integers fail to occur
+as such an index.  The proof combines an exact rooted-forest dynamic program
+covering all trees in the exceptional range, exact caterpillar subset-sum and
+compressed-interval certificates for a finite bridge, and a universal
+Thue--Morse caterpillar construction whose fixed-order intervals overlap for
+all sufficiently large even orders.  Every finite computation uses exact
+integer arithmetic and is accompanied by reproducible source, exact output,
+and independent checks.  With $\N=\{1,2,3,\ldots\}$, the final result is
+\[
+  \left|\N\setminus\Tfour\right|=14{,}099,
+  \qquad
+  \max(\N\setminus\Tfour)=80{,}163.
+\]
+\end{abstract}
+
+\noindent\textbf{Keywords.}
+Steiner distance; Steiner--Wiener index; tree invariant; inverse problem;
+caterpillar; exact certificate; Thue--Morse partition.
+
+\noindent\textbf{2020 Mathematics Subject Classification.}
+05C05, 05C12, 05C35.
+
+\section{Introduction and main theorem}
+
+For a finite tree $T$ and a nonempty set $S\subseteq V(T)$, let $d_T(S)$
+denote the number of edges in the unique minimal connected subgraph of $T$
+containing $S$.  The Steiner--Wiener $4$-index is
+\begin{equation}\label{eq:def-sw}
+  \SW(T)=
+  \sum_{\substack{S\subseteq V(T)\\ |S|=4}}d_T(S).
+\end{equation}
+We write
+\[
+  \Tfour=\set{\SW(T):T\text{ is a finite tree}},
+  \qquad
+  \N=\{1,2,3,\ldots\}.
+\]
+The two inverse parameters are
+\[
+  e(4)=\left|\N\setminus\Tfour\right|,
+  \qquad
+  N_0(4)=\max\left(\N\setminus\Tfour\right),
+\]
+where the theorem below proves in particular that the complement is finite and
+nonempty.
+
+\begin{theorem}[Main theorem]\label{thm:main}
+Exactly $14{,}099$ positive integers are not equal to $\SW(T)$ for any finite
+tree $T$, and the largest such integer is $80{,}163$.  Equivalently,
+\[
+  \boxed{e(4)=14{,}099},
+  \qquad
+  \boxed{N_0(4)=80{,}163}.
+\]
+\end{theorem}
+
+The proof has three logically distinct parts.
+\begin{enumerate}[label=(\roman*)]
+\item An exact dynamic program enumerates the attainable values of
+      \emph{all} trees in the range in which exceptions can occur.  It proves
+      that exactly $14{,}099$ values at most $80{,}163$ are absent, that
+      $80{,}163$ is absent, and that every value from $80{,}164$ through
+      $178{,}857$ occurs.
+\item Exact caterpillar certificates and compressed interval unions prove
+      \[
+        \interval{178{,}858}{554{,}860{,}689{,}583}
+        \subseteq\Tfour.
+      \]
+\item A self-contained caterpillar construction gives
+      \[
+        \interval{272{,}308{,}250{,}181}{\infty}\subseteq\Tfour.
+      \]
+      This overlaps the finite bridge.
+\end{enumerate}
+The universal arguments are proved symbolically.  Statements restricted to
+finite parameter ranges are explicitly identified as exact computer-assisted
+certificates.
+
+\section{Edge decomposition and caterpillar coordinates}
+
+We use the convention $\binom{m}{r}=0$ for integers $m<r$.
+
+\subsection{The edge-contribution formula}
+
+\begin{lemma}[Edge decomposition]\label{lem:edge}
+Let $T$ be a tree of order $n$.  If deleting an edge $e$ produces components
+of orders $s_e$ and $n-s_e$, then
+\begin{equation}\label{eq:edge-weight}
+  \SW(T)=\sum_{e\in E(T)}w_n(s_e),
+  \qquad
+  w_n(s)=\C{n}{4}-\C{s}{4}-\C{n-s}{4}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+For a four-set $S$, the edge $e$ belongs to the minimal subtree spanning $S$
+if and only if $S$ is not contained entirely in either component of $T-e$.
+Among all $\binom n4$ four-sets, exactly $\binom{s_e}{4}$ lie in one
+component and $\binom{n-s_e}{4}$ lie in the other.  Thus $e$ is counted
+$w_n(s_e)$ times in \eqref{eq:def-sw}.  Summing the edge indicators first and
+then the four-sets proves \eqref{eq:edge-weight}.
+\end{proof}
+
+The first difference is
+\begin{equation}\label{eq:w-difference}
+  w_n(s+1)-w_n(s)
+  =\C{n-s-1}{3}-\C{s}{3}.
+\end{equation}
+It is nonnegative for $1\le s<n/2$.  Choosing $s_e$ as the smaller component
+order therefore gives $w_n(s_e)\ge w_n(1)=\binom{n-1}{3}$.
+
+\begin{corollary}[Minimum at a fixed order]\label{cor:star-min}
+The minimum Steiner--Wiener $4$-index among trees of order $n\ge4$ is
+\begin{equation}\label{eq:G}
+  G(n)=(n-1)\C{n-1}{3}.
+\end{equation}
+For $n\ge5$, equality holds only for the star.  At $n=4$, every tree has
+index $3=G(4)$.
+\end{corollary}
+
+\begin{proof}
+Every $n$-vertex tree has $n-1$ edges, so the preceding inequality gives
+$\SW(T)\ge(n-1)w_n(1)=G(n)$.  A star attains equality.  For $n\ge5$ the
+inequality in \eqref{eq:w-difference} is strict at every $1\le s<n/2$ once
+$s>1$; hence equality forces every edge to have a one-vertex component, which
+characterizes the star.  The order-four statement follows directly from
+\eqref{eq:edge-weight}.
+\end{proof}
+
+\subsection{Caterpillar cut sets}
+
+The finite bridge and the infinite construction use a convenient exact
+parameterization of caterpillars.
+
+\begin{lemma}[Caterpillar cut-set realization]\label{lem:caterpillar-realization}
+Let $n\ge4$ and let
+$A=\{a_1<\cdots<a_t\}\subseteq\{2,\ldots,n-2\}$.  There is an $n$-vertex
+caterpillar whose non-leaf edge cuts have component orders
+$a_1,\ldots,a_t$.  Its index is
+\begin{equation}\label{eq:caterpillar-formula}
+  \SW(T_A)=G(n)+\sum_{a\in A}\Delta_n(a),
+  \qquad
+  \Delta_n(a)=\C{n-1}{4}-\C{a}{4}-\C{n-a}{4}.
+\end{equation}
+The same formula with an empty sum is realized by the star when $A=\varnothing$.
+\end{lemma}
+
+\begin{proof}
+For $t\ge1$, take a spine $v_0v_1\cdots v_t$.  Attach $a_1-1$ leaves to
+$v_0$, attach $a_{i+1}-a_i-1$ leaves to $v_i$ for
+$1\le i<t$, and attach $n-a_t-1$ leaves to $v_t$.  All multiplicities are
+nonnegative.  Their sum is $n-t-1$, so the resulting tree has $n$ vertices.
+Deleting the spine edge $v_{i-1}v_i$ leaves a prefix component of order
+$a_i$.  Every other edge is a leaf edge.
+
+There are $n-1-t$ leaf edges and $t$ spine edges.  Since
+\[
+  w_n(a)-w_n(1)
+  =\C{n-1}{4}-\C{a}{4}-\C{n-a}{4}
+  =\Delta_n(a),
+\]
+subtracting the star contribution and adding the $t$ spine corrections gives
+\eqref{eq:caterpillar-formula}.
+\end{proof}
+
+Consequently, for fixed $n$, every subset sum of
+$\Delta_n(2),\ldots,\Delta_n(n-2)$ is realized by a concrete caterpillar.
+This statement is used repeatedly below; it is not merely a numerical encoding
+of cut sizes.
+
+\section{The exact all-tree certificate}
+
+This section describes the finite computation that determines every exception.
+Its completeness rests on a rooted-tree recurrence, not on a database of
+selected tree shapes.
+
+For subsets $X,Y\subseteq\N\cup\{0\}$, write
+$X+Y=\{x+y:x\in X,\ y\in Y\}$.
+Fix a global tree order $n$.  Let $P_n(r)$ be the set of internal edge sums of
+rooted trees of order $r$, where the edge from the root to a possible parent is
+omitted and every internal edge is evaluated with the global weight $w_n$.
+Let $F_n(t)$ be the corresponding set for ordered forests of rooted trees with
+total order $t$.
+
+\begin{proposition}[Rooted-forest recurrence]\label{prop:rooted-dp}
+For fixed $n$,
+\begin{align}
+  F_n(0)&=\{0\}, & P_n(1)&=\{0\},\label{eq:dp-base}\\
+  P_n(r)&=F_n(r-1) &&(r\ge2),\label{eq:dp-root}\\
+  F_n(t)&=\bigcup_{s=1}^{t}
+  \left(F_n(t-s)+w_n(s)+P_n(s)\right) &&(t\ge1).
+  \label{eq:dp-rec}
+\end{align}
+Moreover, $P_n(n)$ is exactly the set of values $\SW(T)$ over all
+$n$-vertex trees $T$.
+\end{proposition}
+
+\begin{proof}
+A rooted tree of order $r$ consists of its root together with a forest of
+rooted child components of total order $r-1$, proving \eqref{eq:dp-root}.
+For an ordered forest of total order $t$, choose its first rooted component to
+have order $s$.  Its attachment edge contributes $w_n(s)$ and its internal
+edges contribute an element of $P_n(s)$; the remaining ordered forest
+contributes an element of $F_n(t-s)$.  This proves that every construction on
+the right side of \eqref{eq:dp-rec} is valid.
+
+Conversely, every rooted forest may be ordered arbitrarily, and after choosing
+its first component it appears in one of the terms on the right.  Thus the
+recurrence omits no rooted forest.  Ordering children may duplicate a value,
+but creates no invalid value.  Rooting any unrooted $n$-vertex tree at an
+arbitrary vertex does not change its edge contributions, so $P_n(n)$ is the
+exact all-tree value set.
+\end{proof}
+
+\subsection{Bitset implementation and finite cutoffs}
+
+For a cap $B$, a set $X\subseteq\{0,\ldots,B\}$ is encoded by the Python
+integer
+\[
+  \beta(X)=\sum_{x\in X}2^x.
+\]
+A shift by $c$ represents $X+c$.  The Minkowski sum $X+Y$ is computed exactly
+by iterating over the set bits of the smaller operand and OR-ing shifted copies
+of the other operand.  Bits above $B$ are discarded.  Since every edge weight
+is nonnegative, discarding a partial sum above $B$ cannot remove a later sum at
+most $B$.
+
+\begin{certificate}[Exceptional range]\label{cert:exceptions}
+The program \code{sw4_certificate.py}, implementing
+Proposition~\ref{prop:rooted-dp} with arbitrary-precision Python integers,
+certifies the following statements.
+\begin{enumerate}[label=(\alph*)]
+\item Exactly $14{,}099$ positive integers at most $80{,}163$ do not belong to
+      $\Tfour$.
+\item The integer $80{,}163$ does not belong to $\Tfour$.
+\item Every integer in $\interval{80{,}164}{178{,}857}$ belongs to $\Tfour$.
+\end{enumerate}
+\end{certificate}
+
+\begin{proof}[Why the finite computation is exhaustive]
+For the first two assertions, Corollary~\ref{cor:star-min} gives
+\[
+  G(29)=91{,}728>80{,}163.
+\]
+Hence no tree of order at least $29$ can contribute a value in the exceptional
+range.  The program computes $P_n(n)\cap[0,80{,}163]$ exactly for every
+$4\le n\le28$ and takes their union.
+
+For the third assertion,
+\[
+  G(34)=180{,}048>178{,}857,
+\]
+so it is enough to compute the exact sets for $4\le n\le33$ up to the cap
+$178{,}857$.  The program asserts that the missing list up to this larger cap
+is identical to the $14{,}099$-element list from the first computation.  The
+list is stored in \code{sw4_missing_values.txt}; the maximal consecutive
+ranges are stored in \code{sw4_missing_ranges.txt}.
+\end{proof}
+
+The same source also performs an exact caterpillar subset-sum computation.
+Since
+\[
+  G(81)=6{,}572{,}800,
+\]
+orders at most $80$ suffice below $G(81)$.  Applying
+Lemma~\ref{lem:caterpillar-realization} to all subsets of
+$\{2,\ldots,n-2\}$ for $4\le n\le80$ gives the next certificate.
+
+\begin{certificate}[Initial caterpillar interval]\label{cert:initial-cat}
+Every integer in
+\[
+  \interval{178{,}858}{6{,}572{,}799}
+\]
+belongs to $\Tfour$.
+\end{certificate}
+
+For fixed $n$, the subset sums are encoded by the exact update
+\[
+  B\longleftarrow B\ \mathrm{OR}\ (B\ll\Delta_n(a)),
+  \qquad a=2,\ldots,n-2,
+\]
+with a mask at the stated cap.  This enumerates every subset and no other
+choice.
+
+\section{Central moment switches}
+
+We next develop the common algebra behind the finite compressed bridge and the
+universal tail.
+
+\subsection{Even-order coordinates}
+
+Put $n=2h$ and define, for $0\le x\le h-2$,
+\begin{equation}\label{eq:delta-def}
+  \delta_h(x)=\Delta_{2h}(h+x).
+\end{equation}
+The distance $x=0$ corresponds to the single cut size $h$.  Every positive
+$x$ corresponds to two distinct cut sizes $h-x$ and $h+x$; because
+$\Delta_{2h}(h-x)=\Delta_{2h}(h+x)$, these are two labeled slots of the same
+weight $\delta_h(x)$.
+
+Expanding \eqref{eq:caterpillar-formula} gives
+\begin{equation}\label{eq:delta-quartic}
+\begin{split}
+  \delta_h(x)={}&-\frac{x^4}{12}
+  +\left(-\frac{h^2}{2}+\frac{3h}{2}-\frac{11}{12}\right)x^2\\
+  &+\frac{7h^4}{12}-\frac{17h^3}{6}
+  +\frac{59h^2}{12}-\frac{11h}{3}+1.
+\end{split}
+\end{equation}
+Thus $\delta_h$ is an even quartic in $x$.
+
+For a finite multiset $S$ of nonnegative distances, write
+\[
+  \Phi_h(S)=\sum_{x\in S}\delta_h(x),
+\]
+with multiplicities.
+
+\begin{lemma}[Moment switch]\label{lem:moment-switch}
+Let $P,Q$ be finite multisets satisfying
+\[
+  |P|=|Q|,
+  \qquad
+  \sum_{x\in P}x^2=\sum_{x\in Q}x^2.
+\]
+Then
+\begin{equation}\label{eq:moment-difference}
+  \Phi_h(P)-\Phi_h(Q)
+  =-\frac1{12}
+  \left(\sum_{x\in P}x^4-\sum_{x\in Q}x^4\right),
+\end{equation}
+which is independent of $h$.
+\end{lemma}
+
+\begin{proof}
+In \eqref{eq:delta-quartic}, equal cardinalities cancel the constant term and
+equal square sums cancel the coefficient of $x^2$.  The displayed fourth-power
+term is the only term that remains.
+\end{proof}
+
+A \emph{state group} is a finite collection of multisets satisfying the two
+common-moment conditions in Lemma~\ref{lem:moment-switch}.  Its normalized
+increments are its state values minus their minimum.
+
+\begin{lemma}[Independent slot allocation]\label{lem:slot-allocation}
+For a state group $\mathcal S$, let
+\[
+  r_{\mathcal S}(x)=\max_{S\in\mathcal S}m_S(x),
+\]
+where $m_S(x)$ is the multiplicity of $x$ in $S$.  Suppose a collection of
+state groups satisfies
+\[
+  \sum_{\mathcal S}r_{\mathcal S}(0)\le1,
+  \qquad
+  \sum_{\mathcal S}r_{\mathcal S}(x)\le2\quad(x>0).
+\]
+Then all group choices can be made independently in a single caterpillar.
+Every labeled slot not reserved by a group may also be made independently
+optional.
+\end{lemma}
+
+\begin{proof}
+Label the one slot at distance $0$ and the two slots at each positive distance.
+For each group and distance, reserve $r_{\mathcal S}(x)$ labeled slots, with
+reservations disjoint across groups.  Every state uses no more than its
+reservation.  A chosen collection of states therefore selects a set of
+distinct cut sizes.  Lemma~\ref{lem:caterpillar-realization} realizes their
+union as a caterpillar.  Unreserved slots are disjoint from every state and may
+be selected or omitted independently.
+\end{proof}
+
+\begin{lemma}[Bounded complete sequence]\label{lem:complete-sequence}
+Suppose independent choices already realize every integer in $[0,W]$.
+If an additional independent binary switch has increment $d\le W+1$, then the
+enlarged choices realize every integer in $[0,W+d]$.  More generally, $A$
+independent copies of that switch extend the interval to $[0,W+Ad]$.
+\end{lemma}
+
+\begin{proof}
+One copy gives the union $[0,W]\cup[d,d+W]$.  The hypothesis makes these
+intervals overlap or touch.  Repeating the same argument $A$ times proves the
+second statement.
+\end{proof}
+
+\subsection{The universal and full seeds}
+
+The first state group is
+\begin{align*}
+  S_0&=(0,2,2,3,6,6,10,10,12,12),\\
+  S_1&=(1,1,4,4,6,7,8,9,12,13),\\
+  S_2&=(1,1,4,5,5,7,7,11,11,13).
+\end{align*}
+All three have cardinality $10$ and square sum $577$; their fourth-power sums
+are $64{,}177$, $64{,}165$, and $64{,}153$.  By
+Lemma~\ref{lem:moment-switch}, their normalized increments are $0,1,2$.
+The independent pair
+\begin{align*}
+  X&=(16,22,24,27,30,32,36),\\
+  Y&=(17,20,25,26,31,33,35)
+\end{align*}
+has cardinality $7$, square sum $5{,}265$, and fourth-power sums
+$4{,}701{,}201$ and $4{,}701{,}189$, so it has increment $1$.  These two
+groups realize $[0,3]$.
+
+Appendix~\ref{app:seed-witnesses} lists fifteen further binary pairs with
+increments
+\[
+  4,8,16,\ldots,65{,}536.
+\]
+Their simultaneous demand is at most one at distance zero and at most two at
+every positive distance; Appendix~\ref{app:capacity} records the compact
+capacity audit.  Successively applying Lemma~\ref{lem:complete-sequence}
+gives the universal seed interval
+\begin{equation}\label{eq:universal-seed}
+  [0,131{,}071].
+\end{equation}
+Its largest distance is $99$.
+
+For finite junction calculations only, one more pair is used:
+\[
+  (32,52,76,100),
+  \qquad
+  (36,44,84,96).
+\]
+Both states have square sum $19{,}504$, and their fourth-power sums are
+$141{,}722{,}368$ and $140{,}149{,}504$, giving increment $131{,}072$.
+Together with \eqref{eq:universal-seed}, this produces the full seed
+\begin{equation}\label{eq:full-seed}
+  [0,262{,}143].
+\end{equation}
+Its largest distance is $100$, and its full simultaneous capacity is valid.
+
+\section{Exact finite bridges}
+
+\subsection{Bitset bridge through $292{,}031{,}545$}
+
+For each $70\le n\le105$, the program
+\code{sw4_caterpillar_bridge_certificate.py} computes every bounded subset
+sum of $\Delta_n(2),\ldots,\Delta_n(n-2)$, shifts by $G(n)$, and ORs the
+results over all orders.  The cap is $292{,}031{,}545$.
+
+\begin{certificate}[Lower caterpillar bridge]\label{cert:lower-bridge}
+The exact bit mask contains every bit in
+\[
+  \interval{6{,}572{,}800}{292{,}031{,}545}.
+\]
+Therefore this interval is contained in $\Tfour$.
+\end{certificate}
+
+The update is the standard exact subset recurrence from
+Certificate~\ref{cert:initial-cat}.  There is no sampling, hashing, modular
+filter, or floating-point arithmetic.
+
+\subsection{Exact compressed interval unions}
+
+The next certificate uses the fact that a finite subset of $\mathbb Z$ can be
+stored exactly as a union of maximal integer intervals.
+
+\begin{lemma}[Exact optional-weight update]\label{lem:interval-update}
+Let $S\subseteq\mathbb Z$ be represented exactly by pairwise-disjoint maximal
+integer intervals.  For an optional weight $w\ge0$, the attainable set after
+allowing the choices $0$ and $w$ is
+\[
+  S'=S\cup(S+w).
+\]
+Merging the two sorted interval lists and coalescing only overlapping or
+adjacent intervals produces the exact maximal-interval representation of
+$S'$.
+\end{lemma}
+
+\begin{proof}
+Translation sends each interval $[a,b]$ of $S$ to $[a+w,b+w]$ and no other
+integer.  The union of the original and translated lists is therefore exactly
+$S'$.  Coalescing overlapping or adjacent intervals changes only its
+representation, not the represented set.
+\end{proof}
+
+For a fixed half-order $h$, the certificate constructs a baseline consisting
+of $G(2h)$ plus the minimum value from every reserved state group.  The seed
+state choices give an initial interval $[0,W_{\rm seed}]$.  Every annulus
+switch and every remaining labeled cut slot supplies an independent optional
+weight.  Lemma~\ref{lem:interval-update} is applied to every weight.  Thus the
+final interval union is the exact attainable increment set for the stated
+caterpillar family.
+
+Three seed families are used.  Their complete states are listed in
+Appendix~\ref{app:finite-seeds}; the certificate checks equal moments,
+normalized increments, support validity, and simultaneous capacities before
+processing any order.
+
+\begin{table}[ht]
+\centering
+\caption{Families used in the compressed finite bridge.  The displayed first
+and last intervals are the selected longest components at the endpoints of
+each order range.}
+\label{tab:finite-bridge-families}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Family & $h$ range & Seed width & Fixed annuli & Endpoint intervals \\
+\midrule
+$\mathcal F_{51}$ & $63$--$66$ & $63$ & none &
+$[282{,}204{,}658,495{,}014{,}629]$;\\
+&&&&$[346{,}215{,}511,635{,}465{,}903]$\\[2pt]
+$\mathcal F_{65}$ & $67$--$206$ & $2{,}047$ & none &
+$[494{,}227{,}243,564{,}426{,}072]$;\\
+&&&&$[58{,}222{,}371{,}640,236{,}605{,}611{,}082]$\\[2pt]
+$\mathcal F_{100}$ & $206$--$253$ & $262{,}143$ & $(101,5),(141,8)$ &
+$[106{,}740{,}323{,}728,189{,}108{,}214{,}894]$;\\
+&&&&$[272{,}308{,}250{,}181,554{,}860{,}689{,}583]$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The full output contains $192$ order rows.  Each selected interval begins no
+later than one past the previously covered endpoint.  The first interval lies
+inside Certificate~\ref{cert:lower-bridge}; every family transition also
+overlaps.
+
+\begin{certificate}[Compressed finite bridge]\label{cert:compressed-bridge}
+The program \code{sw4_complete_bridge_certificate.cpp} and its exact output
+\code{sw4_complete_bridge_output.txt} certify
+\[
+  \interval{282{,}204{,}658}{554{,}860{,}689{,}583}
+  \subseteq\Tfour.
+\]
+Together with Certificate~\ref{cert:lower-bridge},
+\begin{equation}\label{eq:finite-bridge}
+  \boxed{
+  \interval{6{,}572{,}800}{554{,}860{,}689{,}583}
+  \subseteq\Tfour.}
+\end{equation}
+\end{certificate}
+
+The independent Python checker
+\code{sw4_bridge_independent_check.py} reads all $192$ rows, verifies every
+junction, and recomputes the six boundary orders independently.
+
+\begin{remark}[Necessary correction to a weaker propagation argument]
+It is essential that the certificate use the exact interval update of
+Lemma~\ref{lem:interval-update}.  At $h=206$, after a partial insertion, a raw
+weight $12{,}794{,}200$ exceeds the then-current complete width plus one,
+$12{,}772{,}104$.  Hence the sufficient condition of
+Lemma~\ref{lem:complete-sequence} does not propagate a single interval through
+that ordering.  The exact attainable set temporarily has more than one
+component; subsequent weights reconnect the components.  The compressed
+interval algorithm retains every component and therefore proves the stated
+interval without the invalid stronger claim.
+\end{remark}
+
+\section{Thue--Morse annuli}
+
+We now prove the universal infinite tail.  The construction uses the universal
+seed \eqref{eq:universal-seed}, not the extra $131{,}072$ digit.
+
+\subsection{An eight-point identity}
+
+For integers $R,q\ge1$ and $0\le r<q$, set
+\[
+  x_j=R+r+jq,
+  \qquad 0\le j\le7.
+\]
+Partition the indices according to the parity of the number of ones in the
+binary expansion of $j$.  Equivalently, put $\varepsilon_j=1$ for
+$j\in\{0,3,5,6\}$ and $\varepsilon_j=-1$ for
+$j\in\{1,2,4,7\}$.
+
+A direct summation gives
+\begin{equation}\label{eq:tm-moments}
+\begin{array}{c|rrrrr}
+ m&0&1&2&3&4\\ \hline
+ \sum_{j=0}^{7}\varepsilon_jj^m&0&0&0&-48&-672.
+\end{array}
+\end{equation}
+Let $E_{R,q,r}$ and $O_{R,q,r}$ denote the two four-element distance states.
+
+\begin{lemma}[Thue--Morse switch]\label{lem:tm-switch}
+The two states have an index difference independent of $h$, of absolute value
+\begin{equation}\label{eq:tm-digit}
+  d_{R,q,r}=8q^3\bigl(2(R+r)+7q\bigr).
+\end{equation}
+For fixed $R,q$, the $q$ switches $r=0,\ldots,q-1$ have disjoint supports,
+and their supports partition the annulus of distances
+\[
+  R,R+1,\ldots,R+8q-1.
+\]
+Their total increment is
+\begin{equation}\label{eq:annulus-total}
+  D(R,q)=8q^4(2R+8q-1).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Write $t=R+r$.  In the signed difference of the two state values, the constant
+and quadratic parts of \eqref{eq:delta-quartic} vanish by
+\eqref{eq:tm-moments}.  Expanding the fourth power gives
+\[
+  \sum_{j=0}^{7}\varepsilon_j(t+jq)^4
+  =4tq^3(-48)+q^4(-672).
+\]
+Multiplication by the coefficient $-1/12$ in
+\eqref{eq:delta-quartic} yields
+\[
+  16tq^3+56q^4=8q^3(2t+7q),
+\]
+which is \eqref{eq:tm-digit}.
+
+Every integer in $[R,R+8q-1]$ has a unique expression $R+r+jq$ with
+$0\le r<q$ and $0\le j\le7$, proving the support assertion.  Finally,
+\begin{align*}
+  \sum_{r=0}^{q-1}d_{R,q,r}
+  &=8q^3\sum_{r=0}^{q-1}\bigl(2R+2r+7q\bigr)\\
+  &=8q^4(2R+8q-1).
+\end{align*}
+\end{proof}
+
+\section{A universal fixed-order interval}
+
+\subsection{The annulus ladder}
+
+Define
+\begin{equation}\label{eq:ladder}
+  R_0=100,
+  \qquad q_0=4,
+  \qquad
+  R_{i+1}=R_i+8q_i,
+  \qquad
+  q_{i+1}=\left\lceil\frac{3q_i}{2}\right\rceil.
+\end{equation}
+Let
+\begin{equation}\label{eq:Wk}
+  W_0=131{,}071,
+  \qquad
+  W_{k+1}=W_k+D(R_k,q_k).
+\end{equation}
+Thus $W_k$ is the complete switch width after the universal seed and the first
+$k$ annuli, indexed $0,\ldots,k-1$.
+
+\begin{lemma}[Annulus ladder completeness]\label{lem:annulus-complete}
+For every $k\ge0$, the universal seed together with the first $k$ annuli
+realizes every increment in $[0,W_k]$.
+\end{lemma}
+
+\begin{proof}
+For the first three annuli, the first digits and preceding widths are
+\[
+  116{,}736\le131{,}072,
+  \qquad
+  528{,}768\le604{,}160,
+  \qquad
+  2{,}466{,}936\le3{,}828{,}608.
+\]
+Thus Lemma~\ref{lem:complete-sequence} starts the induction.
+
+We first prove the invariant
+\begin{equation}\label{eq:Rq-invariant}
+  12q_i\le R_i\le25q_i.
+\end{equation}
+It holds for $(R_0,q_0)=(100,4)$.  Since $q_i\ge4$,
+\[
+  \frac32q_i\le q_{i+1}\le\frac{13}{8}q_i.
+\]
+Consequently,
+\[
+  R_{i+1}\le33q_i\le22q_{i+1}<25q_{i+1},
+\]
+and
+\[
+  R_{i+1}\ge20q_i\ge\frac{160}{13}q_{i+1}>12q_{i+1}.
+\]
+
+Consider an annulus with index $i\ge3$.  Put $p=q_{i-1}$ and
+$R=R_{i-1}$.  Then $p\ge9$, $R/p\ge12$, and
+$q_i/p\le14/9$.  Since $R_i=R+8p$, equation
+\eqref{eq:tm-digit} gives
+\begin{equation}\label{eq:first-digit-upper}
+  \frac{d_{R_i,q_i,0}}{8p^4}
+  \le
+  \left(\frac{14}{9}\right)^3
+  \left(2\frac Rp+\frac{242}{9}\right).
+\end{equation}
+The preceding annulus has total increment
+\begin{equation}\label{eq:previous-annulus-lower}
+  \frac{D(R,p)}{8p^4}
+  =p\left(2\frac Rp+8-\frac1p\right).
+\end{equation}
+The difference between the right side of
+\eqref{eq:previous-annulus-lower} and the right side of
+\eqref{eq:first-digit-upper} is increasing in $R/p$.  Its minimum in the
+stated domain occurs at $p=9$ and $R/p=12$, where the required inequality is
+the exact integer comparison
+\[
+  287\cdot6561>2744\cdot458.
+\]
+Therefore
+\[
+  d_{R_i,q_i,0}\le D(R_{i-1},q_{i-1})\le W_i.
+\]
+
+Within a fixed annulus,
+\[
+  d_{R,q,r+1}-d_{R,q,r}=16q^3,
+\]
+and $d_{R,q,r+1}\le2d_{R,q,r}$.  If the current width before inserting
+$d_{R,q,r}$ is at least $d_{R,q,r}-1$, then afterward it is at least
+$2d_{R,q,r}-1$, so the next digit also satisfies the hypothesis of
+Lemma~\ref{lem:complete-sequence}.  This proves the induction over all digits
+and all annuli.
+\end{proof}
+
+\subsection{Reaching the raw caterpillar cuts}
+
+For $h\ge365$, let $k=k(h)$ be the largest integer satisfying
+\begin{equation}\label{eq:k-choice}
+  R_k\le h-1.
+\end{equation}
+Then the first $k$ annuli occupy distances $100$ through $R_k-1$ and fit
+inside $0\le x\le h-2$.  Maximality gives $h\le R_{k+1}$.
+The smallest nonzero raw caterpillar increment is
+\begin{equation}\label{eq:delta2}
+  \Delta_{2h}(2)=\C{2h-2}{3}.
+\end{equation}
+
+\begin{lemma}[Switch width reaches the first raw cut]\label{lem:width-raw}
+For every $h\ge365$,
+\begin{equation}\label{eq:W-raw}
+  W_{k(h)}\ge\Delta_{2h}(2)-1.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The first relevant ladder values are
+\begin{center}
+\begin{tabular}{@{}r r r@{}}
+\toprule
+$k$ & $W_k$ & $\binom{2R_{k+1}-2}{3}-1$\\
+\midrule
+$4$ & $215{,}457{,}655$ & $199{,}064{,}819$\\
+$5$ & $1{,}607{,}941{,}615$ & $648{,}686{,}323$\\
+$6$ & $12{,}672{,}515{,}567$ & $2{,}138{,}222{,}579$\\
+\bottomrule
+\end{tabular}
+\end{center}
+These are exact evaluations of \eqref{eq:ladder}--\eqref{eq:Wk}.
+
+For $k\ge7$, put $i=k-1$ and $p=q_i$.  Then $p\ge48$.  From
+\eqref{eq:Rq-invariant} and $q_{i+1}\le13p/8$,
+\[
+  R_{i+2}=R_i+8p+8q_{i+1}\le46p.
+\]
+Moreover,
+\[
+  W_k\ge D(R_i,p)
+  =8p^4(2R_i+8p-1)
+  \ge64p^5.
+\]
+On the other hand,
+\[
+  \C{2R_{i+2}-2}{3}
+  <\frac{(2R_{i+2})^3}{6}
+  \le\frac43\,46^3p^3.
+\]
+The inequality
+\[
+  64\cdot48^2>\frac43\,46^3
+\]
+therefore implies
+$W_k\ge\binom{2R_{k+1}-2}{3}-1$.  Since
+$h\le R_{k+1}$, monotonicity of the binomial coefficient and
+\eqref{eq:delta2} prove \eqref{eq:W-raw}.
+\end{proof}
+
+\subsection{Insertion of all remaining slots}
+
+For $1\le a<n/2$, equation \eqref{eq:w-difference} implies that the first
+differences of $\Delta_n(a)$ are positive and nonincreasing.  Since
+$\Delta_n(1)=0$, we obtain
+\begin{equation}\label{eq:concavity-bound}
+  \Delta_n(a)\le(a-1)\Delta_n(2),
+  \qquad 2\le a\le n/2.
+\end{equation}
+
+The seed uses only distances at most $99$.  Each annulus uses one of the two
+slots at each supported positive distance.  Therefore, for every
+$a=2,\ldots,h-100$, at least one slot of weight $\Delta_{2h}(a)$ remains
+unreserved: it is the slot at distance $x=h-a\ge100$.
+
+Starting from the complete interval $[0,W_k]$, insert one such slot in the
+order $a=2,3,\ldots,h-100$.  Lemma~\ref{lem:width-raw} handles $a=2$.
+After the slots through $a$ have been inserted, the current width $W$ satisfies
+\begin{align*}
+  W+1
+  &\ge \Delta_{2h}(2)+\sum_{j=2}^{a}\Delta_{2h}(j)\\
+  &\ge a\Delta_{2h}(2)\\
+  &\ge\Delta_{2h}(a+1),
+\end{align*}
+where the last line uses \eqref{eq:concavity-bound}.  Thus the interval remains
+complete.
+
+Let
+\begin{equation}\label{eq:Sh-def}
+  S_h=\sum_{a=2}^{h-100}\Delta_{2h}(a).
+\end{equation}
+Hockey-stick summation gives
+\begin{equation}\label{eq:Sh-closed}
+\begin{split}
+  S_h={}&(h-101)\C{2h-1}{4}-\C{h-99}{5}\\
+       &-\C{2h-1}{5}+\C{h+100}{5}.
+\end{split}
+\end{equation}
+Furthermore, exact expansion yields
+\begin{equation}\label{eq:Sh-central-poly}
+\begin{split}
+  120\bigl(S_h-\Delta_{2h}(h)\bigr)
+  ={}&48h^5-7315h^4+34790h^3\\
+    &+19641055h^2-59058458h+19539439680.
+\end{split}
+\end{equation}
+For $h\ge365$, the first two terms combine to
+$h^4(48h-7315)>0$, the terms
+$19641055h^2-59058458h$ combine to a positive quantity, and every other
+term displayed in \eqref{eq:Sh-central-poly} is positive.  Hence
+\begin{equation}\label{eq:S-dominates-center}
+  S_h\ge\Delta_{2h}(h).
+\end{equation}
+
+After the first copy at every outer size has been inserted, the accumulated
+width is at least $S_h$, hence at least the largest raw cut weight by
+\eqref{eq:S-dominates-center}.  Every remaining unreserved slot may therefore
+be inserted in nondecreasing order using
+Lemma~\ref{lem:complete-sequence}.
+
+Define $L_h$ explicitly as
+\begin{equation}\label{eq:Lh-def}
+\begin{split}
+ L_h={}&G(2h)
+ +\sum_{\mathcal S\in\mathcal G}
+   \min_{S\in\mathcal S}\Phi_h(S)\\
+ &+\sum_{i=0}^{k(h)-1}\sum_{r=0}^{q_i-1}
+   \min\bigl\{\Phi_h(E_{R_i,q_i,r}),
+               \Phi_h(O_{R_i,q_i,r})\bigr\},
+\end{split}
+\end{equation}
+where $\mathcal G$ is the universal seed.  Let $U_h$ be $L_h$ plus the
+complete switch width and the weights of all remaining optional slots.
+
+\begin{theorem}[Universal fixed-order interval]\label{thm:fixed-order}
+For every integer $h\ge365$, the caterpillars described above realize every
+integer in
+\[
+  J_h=[L_h,U_h].
+\]
+At the first order,
+\begin{equation}\label{eq:J365}
+  J_{365}=
+  [1{,}596{,}122{,}112{,}921,
+   3{,}577{,}546{,}733{,}067].
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The seed and annulus states are simultaneously valid by
+Lemma~\ref{lem:slot-allocation}; their choices realize $[0,W_{k(h)}]$ by
+Lemma~\ref{lem:annulus-complete}.  The preceding insertion argument adds every
+remaining labeled slot while preserving a complete interval.  Translating by
+the baseline \eqref{eq:Lh-def} proves the theorem.  The endpoint evaluation at
+$h=365$ is an exact integer calculation verified independently by the supplied
+Python certificates.
+\end{proof}
+
+\section{Overlap of the universal intervals}
+
+\subsection{Finite overlap range}
+
+The exact program \code{sw4_infinite_tail_certificate.py} evaluates the
+explicit construction of Theorem~\ref{thm:fixed-order} for every
+$365\le h\le1171$.  It verifies
+\begin{equation}\label{eq:finite-universal-overlap}
+  L_{h+1}\le U_h+1,
+  \qquad 365\le h\le1170.
+\end{equation}
+The minimum overlap margin $U_h+1-L_{h+1}$ is
+$1{,}960{,}269{,}091{,}932$, at the transition $h=365$ to $366$.
+The $807$ exact rows are stored in
+\code{sw4_infinite_tail_overlaps.csv}.
+
+\subsection{Symbolic overlap range}
+
+At order $2(h+1)$, every selected universal seed state contains exactly
+$77$ cuts: ten from the three-state group, seven from the unit pair, and four
+from each of the fifteen binary groups.  If $k=k(h+1)$ annuli are selected,
+they use $4\sum_{i<k}q_i$ cuts.  From
+$R_k=100+8\sum_{i<k}q_i$ and $R_k\le h$, the total number of selected
+baseline cuts is at most
+\begin{equation}\label{eq:cut-count-bound}
+  77+\frac{h-100}{2}=\frac{h+54}{2}.
+\end{equation}
+Every selected cut at order $2h+2$ contributes at most
+$\binom{2h+1}{4}$.  Therefore
+\begin{equation}\label{eq:L-upper}
+  L_{h+1}
+  \le G(2h+2)+\frac{h+54}{2}\C{2h+1}{4}.
+\end{equation}
+On the other hand, Theorem~\ref{thm:fixed-order} and the insertion of the
+outer cuts give
+\begin{equation}\label{eq:U-lower}
+  U_h\ge G(2h)+S_h.
+\end{equation}
+Substituting \eqref{eq:Sh-closed} into
+\eqref{eq:L-upper}--\eqref{eq:U-lower} and clearing denominators gives
+\begin{equation}\label{eq:overlap-poly}
+\begin{split}
+120\Biggl(&G(2h)+S_h+1-G(2h+2)
+-\frac{h+54}{2}\C{2h+1}{4}\Biggr)\\
+={}&8h^5-9365h^4+35340h^3+19643615h^2\\
+&-59060078h+19539440040.
+\end{split}
+\end{equation}
+For $h\ge1171$, the first two terms combine to
+$h^4(8h-9365)>0$, the pair
+$19643615h^2-59060078h$ is positive, and the remaining displayed terms are
+positive.  Hence \eqref{eq:overlap-poly} is positive and
+\begin{equation}\label{eq:symbolic-overlap}
+  L_{h+1}\le U_h+1,
+  \qquad h\ge1171.
+\end{equation}
+
+Combining \eqref{eq:finite-universal-overlap} and
+\eqref{eq:symbolic-overlap} proves the universal overlap theorem.
+
+\begin{theorem}[Universal tail above $J_{365}$]\label{thm:universal-tail}
+\[
+  \bigcup_{h\ge365}J_h
+  =\interval{1{,}596{,}122{,}112{,}921}{\infty}.
+\]
+\end{theorem}
+
+\begin{proof}
+The first interval is \eqref{eq:J365}.  Every consecutive pair touches or
+overlaps by \eqref{eq:finite-universal-overlap} and
+\eqref{eq:symbolic-overlap}.  The left endpoints tend to infinity because
+$L_h\ge G(2h)$, so the union is exactly the displayed ray.
+\end{proof}
+
+\section{Exact finite junction to the universal tail}
+
+The first universal interval begins above the finite bridge
+\eqref{eq:finite-bridge}.  A final exact chain uses the full seed
+\eqref{eq:full-seed}, the fixed annuli
+\begin{equation}\label{eq:fixed-tail-annuli}
+  (R,q)=(101,5),
+  \qquad
+  (R,q)=(141,8),
+\end{equation}
+and every remaining labeled cut slot.
+For each $h=253,254,\ldots,365$, the C++ program
+\code{sw4_infinite_tail_finite_overlap.cpp} applies the exact interval
+update of Lemma~\ref{lem:interval-update} and selects a longest component.
+
+The first selected interval, at $h=253$, is
+\begin{equation}\label{eq:tail-junction-first}
+  [272{,}308{,}250{,}181,
+   554{,}860{,}689{,}583],
+\end{equation}
+which already lies in and reaches the end of the finite bridge.  Every one of
+the $113$ selected intervals overlaps the preceding covered set.  The last,
+at $h=365$, is
+\begin{equation}\label{eq:tail-junction-last}
+  [1{,}304{,}696{,}148{,}031,
+   3{,}868{,}972{,}697{,}957],
+\end{equation}
+which overlaps $J_{365}$.
+
+\begin{certificate}[Finite junction]\label{cert:tail-junction}
+The exact interval rows in
+\code{sw4_infinite_tail_finite_overlap.csv} certify
+\[
+  \interval{272{,}308{,}250{,}181}
+           {3{,}868{,}972{,}697{,}957}
+  \subseteq\Tfour,
+\]
+and the final endpoint overlaps the first universal interval.
+\end{certificate}
+
+\begin{corollary}[Self-contained infinite tail]\label{cor:infinite-tail}
+\begin{equation}\label{eq:tail-final}
+  \boxed{
+  \interval{272{,}308{,}250{,}181}{\infty}
+  \subseteq\Tfour.}
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+Certificate~\ref{cert:tail-junction} joins continuously to
+Theorem~\ref{thm:universal-tail}.
+\end{proof}
+
+\section{Deduction of the exact inverse parameters}
+
+We now combine the logically independent pieces.
+
+\begin{proof}[Proof of Theorem~\ref{thm:main}]
+Certificate~\ref{cert:exceptions} proves that exactly $14{,}099$ positive
+integers at most $80{,}163$ are unattainable, that $80{,}163$ itself is
+unattainable, and that every integer from $80{,}164$ through $178{,}857$ is
+attainable.  Certificate~\ref{cert:initial-cat} continues the coverage through
+$6{,}572{,}799$.  Equation \eqref{eq:finite-bridge} continues it through
+$554{,}860{,}689{,}583$.  Finally, the infinite tail
+\eqref{eq:tail-final} begins below that endpoint.  Hence every integer greater
+than $80{,}163$ is attainable, while the certified $14{,}099$ exceptions at or
+below it are the complete complement.  Therefore
+\[
+  e(4)=14{,}099,
+  \qquad
+  N_0(4)=80{,}163.
+\]
+\end{proof}
+
+\section{Computational model, reproducibility, and audit}
+
+\subsection{Arithmetic and algorithmic completeness}
+
+All Python computations use arbitrary-precision integers.  The bitset
+certificates therefore have no fixed-width overflow.  The C++ programs use
+signed $128$-bit intermediates for binomial products and assert before every
+conversion that stored endpoints fit in signed $64$-bit range.  No
+floating-point arithmetic is used.
+
+The roles of the programs are as follows.
+\begin{description}[style=nextline]
+\item[\code{sw4_certificate.py}]
+Implements the exact rooted-forest recurrence and the original caterpillar
+subset-sum certificate.  Its order bounds are justified by the star minimum,
+so it covers every tree order that can affect the claimed ranges.
+\item[\code{sw4_caterpillar_bridge_certificate.py}]
+Computes all bounded caterpillar subset sums for orders $70$ through $105$ and
+checks the entire required bit mask.
+\item[\code{sw4_complete_bridge_certificate.cpp}]
+Computes exact interval unions for the $192$ finite-bridge rows and asserts
+every junction.
+\item[\code{sw4_bridge_independent_check.py}]
+Independently checks all bridge rows and recomputes the six family-boundary
+orders.
+\item[\code{sw4_infinite_tail_finite_overlap.cpp}]
+Computes the $113$ exact finite-junction rows from $h=253$ through $365$.
+\item[\code{sw4_infinite_tail_certificate.py}]
+Checks every seed witness and capacity, all complete-sequence inequalities in
+the universal construction, the explicit interval at $h=365$, and every
+finite overlap through $h=1171$.
+\item[\code{sw4_infinite_tail_independent_check.py}]
+Independently checks the witness tables, both finite chains, all $807$
+universal overlap rows, and the symbolic boundary identities.
+\end{description}
+
+The exact optional-weight update of Lemma~\ref{lem:interval-update} is exhaustive
+because each step replaces the current exact set $S$ by precisely
+$S\cup(S+w)$.  Induction on the number of optional weights proves that the
+final union contains every and only the sums generated by the stated family.
+Likewise, the bitset subset update is the exact recurrence for choosing or
+omitting each cut.
+
+\subsection{Reproduction commands}
+
+From the supplementary archive directory, the principal checks are reproduced
+by
+\begin{lstlisting}[basicstyle=\ttfamily\small,frame=single]
+python sw4_certificate.py
+python sw4_caterpillar_bridge_certificate.py
+
+g++ -O3 -std=c++20 -Wall -Wextra -pedantic \
+  sw4_complete_bridge_certificate.cpp \
+  -o sw4_complete_bridge_certificate
+./sw4_complete_bridge_certificate
+python sw4_bridge_independent_check.py
+
+g++ -O3 -std=c++20 -Wall -Wextra -pedantic \
+  sw4_infinite_tail_finite_overlap.cpp \
+  -o sw4_infinite_tail_finite_overlap
+./sw4_infinite_tail_finite_overlap
+python sw4_infinite_tail_certificate.py
+python sw4_infinite_tail_independent_check.py
+
+sha256sum -c sw4_self_contained_sha256.txt
+\end{lstlisting}
+The expected summaries include
+\begin{lstlisting}[basicstyle=\ttfamily\small,frame=single]
+PASS
+candidate e(4) = 14099
+candidate N0(4) = 80163
+exact all-tree coverage: 80164..178857
+caterpillar coverage: 178858..6572799
+
+PASS
+orders=70..105
+coverage=6572800..292031545
+
+PASS
+bridge_start=282204658
+bridge_end=554860689583
+
+PASS
+bridge_start=272308250181
+bridge_end=3868972697957
+universal_L_365=1596122112921
+
+PASS
+universal_h_start=365
+universal_first_interval=1596122112921..3577546733067
+symbolic_overlap_h>=1171
+\end{lstlisting}
+
+The verified supplementary archive has SHA-256
+\begin{center}
+\code{1ed15206d460cac319b0b3683a41ade37db687ecd590a199126b08e189b47342}.
+\end{center}
+Selected file hashes appear in Appendix~\ref{app:hashes}; the full manifest is
+\code{sw4_self_contained_sha256.txt}.  The supplementary archive is cited
+as reference~\cite{supplement}.
+
+\subsection{Hostile audit summary}
+
+The following failure modes are explicitly excluded.
+\begin{enumerate}[label=(\arabic*)]
+\item Proposition~\ref{prop:rooted-dp} covers all rooted trees; the star lower
+      bound excludes all uncomputed orders below the exceptional cutoff.
+\item Every caterpillar state is a set of labeled cut slots satisfying the
+      one-at-zero and two-at-positive-distance capacities; Lemma
+      \ref{lem:caterpillar-realization} converts every selected set into an
+      actual finite tree.
+\item Every seed row has equal cardinality and equal square sum, and its
+      fourth-power difference gives the claimed exact increment.
+\item Thue--Morse supports are pairwise disjoint within an annulus and across
+      the ladder; their increment formula is derived symbolically.
+\item The universal complete-sequence inequalities are proved for all annuli,
+      not inferred from numerical density.
+\item The finite interval programs preserve every component.  In particular,
+      the invalid stronger one-interval propagation noted after
+      Certificate~\ref{cert:compressed-bridge} is not used.
+\item Every finite interval junction is checked with exact integers.  The
+      transition to the universal range is exact, and the symbolic overlap
+      polynomial is positive throughout its entire claimed domain.
+\item The final finite bridge and the infinite tail overlap, leaving no
+      unproved integer above $80{,}163$.
+\end{enumerate}
+
+\appendix
+
+\section{Universal central-seed witnesses}\label{app:seed-witnesses}
+
+For each row below, the two states have the same cardinality and the same
+square sum.  The normalized increment is the absolute fourth-power difference
+divided by $12$, as in Lemma~\ref{lem:moment-switch}.  The orientation of the
+states is irrelevant because the lower-valued state is used in the baseline.
+
+\begin{landscape}
+\scriptsize
+\begin{longtable}{@{}r p{0.245\linewidth} p{0.245\linewidth} r r r@{}}
+\caption{Binary witnesses for the universal central seed.}\label{tab:universal-witnesses}\\
+\toprule
+$d$ & State $P$ & State $Q$ & Common $\sum x^2$ & $\sum_{P}x^4$ & $\sum_{Q}x^4$\\
+\midrule
+\endfirsthead
+\toprule
+$d$ & State $P$ & State $Q$ & Common $\sum x^2$ & $\sum_{P}x^4$ & $\sum_{Q}x^4$\\
+\midrule
+\endhead
+$4$ & $72,78,85,90$ & $73,76,88,88$ & $26{,}593$ & $181{,}699{,}537$ & $181{,}699{,}489$\\
+$8$ & $8,58,71,73$ & $45,46,51,84$ & $13{,}798$ & $65{,}130{,}514$ & $65{,}130{,}418$\\
+$16$ & $77,83,90,95$ & $78,81,93,93$ & $29{,}943$ & $229{,}671{,}987$ & $229{,}672{,}179$\\
+$32$ & $81,87,94,99$ & $82,85,97,97$ & $32{,}767$ & $274{,}470{,}979$ & $274{,}471{,}363$\\
+$64$ & $22,43,64,71$ & $25,48,54,75$ & $11{,}470$ & $45{,}841{,}954$ & $45{,}842{,}722$\\
+$128$ & $15,28,39,51$ & $23,23,37,52$ & $5{,}131$ & $9{,}743{,}923$ & $9{,}745{,}459$\\
+$256$ & $9,24,64,87$ & $29,40,40,91$ & $12{,}322$ & $74{,}405{,}314$ & $74{,}402{,}242$\\
+$512$ & $14,14,29,35$ & $18,18,21,37$ & $2{,}458$ & $2{,}284{,}738$ & $2{,}278{,}594$\\
+$1{,}024$ & $28,31,86,92$ & $30,33,80,96$ & $17{,}605$ & $127{,}878{,}289$ & $127{,}890{,}577$\\
+$2{,}048$ & $16,60,66,66$ & $16,62,62,68$ & $12{,}568$ & $50{,}975{,}008$ & $50{,}999{,}584$\\
+$4{,}096$ & $55,61,67,70$ & $57,58,69,69$ & $16{,}135$ & $67{,}157{,}587$ & $67{,}206{,}739$\\
+$8{,}192$ & $26,41,53,65$ & $27,38,57,63$ & $9{,}391$ & $29{,}023{,}843$ & $28{,}925{,}539$\\
+$16{,}384$ & $3,60,67,75$ & $19,53,68,77$ & $13{,}723$ & $64{,}751{,}827$ & $64{,}555{,}219$\\
+$32{,}768$ & $13,20,43,47$ & $15,21,44,45$ & $4{,}627$ & $8{,}487{,}043$ & $8{,}093{,}827$\\
+$65{,}536$ & $38,50,56,70$ & $42,46,54,72$ & $11{,}980$ & $42{,}179{,}632$ & $42{,}966{,}064$\\
+\bottomrule
+\end{longtable}
+\end{landscape}
+
+\section{Capacity audit for the central seeds}\label{app:capacity}
+
+For the universal seed, the total reserved demand equals one at
+\[
+\begin{split}
+\{&0,17,19,32,36,39,41,42,44,47,48,50,52,55,56,61,63,65,\\
+  &76,80,82,83,84,86,91,92,94,95,96,99\},
+\end{split}
+\]
+equals two at
+\[
+\begin{split}
+\{&1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,21,22,23,24,25,26,\\
+  &27,28,29,30,31,33,35,37,38,40,43,45,46,51,53,54,57,58,60,62,64,\\
+  &66,67,68,69,70,71,72,73,75,77,78,81,85,87,88,90,93,97\},
+\end{split}
+\]
+and is zero at the other distances through $99$.  Thus the one-slot capacity
+at zero and the two-slot capacity at every positive distance are respected.
+The full seed adds the $131{,}072$ pair.  Its exact demand remains at most one
+at zero and at most two elsewhere; its largest used distance is $100$.  The
+machine-readable versions are \code{sw4_central_seed_capacity.csv} and
+\code{sw4_full_seed_capacity.csv}.
+
+\section{Compact seeds used in the finite bridge}\label{app:finite-seeds}
+
+All families include the common three-state group $S_0,S_1,S_2$ and the unit
+pair $X,Y$.  The following tables list the remaining binary pairs.  In each
+row the common square sum and the fourth-power difference verify the displayed
+increment through Lemma~\ref{lem:moment-switch}.
+
+\begin{table}[ht]
+\centering
+\caption{Additional pairs for $\mathcal F_{51}$, yielding seed width $63$.}
+\small
+\begin{tabular}{@{}rllrrr@{}}
+\toprule
+$d$ & $P$ & $Q$ & $\sum x^2$ & $\sum_Px^4$ & $\sum_Qx^4$\\
+\midrule
+$4$ & $23,28,32,49$ & $18,25,42,45$ & $4{,}738$ & $7{,}707{,}874$ & $7{,}707{,}922$\\
+$8$ & $16,24,45,51$ & $8,28,47,49$ & $5{,}458$ & $11{,}263{,}138$ & $11{,}263{,}234$\\
+$16$ & $20,29,46,50$ & $14,36,42,51$ & $5{,}857$ & $11{,}594{,}737$ & $11{,}594{,}929$\\
+$32$ & $9,39,39,46$ & $23,29,37,50$ & $5{,}239$ & $9{,}110{,}899$ & $9{,}111{,}283$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{Additional pairs for $\mathcal F_{65}$, yielding seed width $2{,}047$.}
+\small
+\begin{tabular}{@{}rllrrr@{}}
+\toprule
+$d$ & $P$ & $Q$ & $\sum x^2$ & $\sum_Px^4$ & $\sum_Qx^4$\\
+\midrule
+$4$ & $23,28,32,49$ & $18,25,42,45$ & $4{,}738$ & $7{,}707{,}874$ & $7{,}707{,}922$\\
+$8$ & $21,24,45,51$ & $19,27,43,52$ & $5{,}643$ & $11{,}392{,}083$ & $11{,}392{,}179$\\
+$16$ & $14,38,55,55$ & $3,43,54,54$ & $7{,}690$ & $20{,}424{,}802$ & $20{,}424{,}994$\\
+$32$ & $9,39,39,46$ & $23,29,37,50$ & $5{,}239$ & $9{,}110{,}899$ & $9{,}111{,}283$\\
+$64$ & $17,28,44,59$ & $15,36,37,60$ & $6{,}490$ & $16{,}563{,}634$ & $16{,}564{,}402$\\
+$128$ & $18,35,48,48$ & $26,29,44,52$ & $6{,}157$ & $12{,}222{,}433$ & $12{,}223{,}969$\\
+$256$ & $20,40,58,65$ & $16,42,60,63$ & $9{,}589$ & $31{,}887{,}121$ & $31{,}890{,}193$\\
+$512$ & $57,57,63,64$ & $56,59,61,65$ & $14{,}563$ & $53{,}642{,}179$ & $53{,}648{,}323$\\
+$1{,}024$ & $14,34,41,53$ & $15,30,46,51$ & $5{,}842$ & $12{,}090{,}994$ & $12{,}103{,}282$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $\mathcal F_{51}$ the total reservation uses $33$ selected cuts, has
+maximum distance $51$, and respects all capacities.  For $\mathcal F_{65}$ it
+uses $53$ selected cuts, has maximum distance $65$, and respects all
+capacities.  The corresponding assertions are executed before the bridge
+program processes any interval row.  The family $\mathcal F_{100}$ uses the
+full universal table in Appendix~\ref{app:seed-witnesses} together with the
+additional $131{,}072$ pair.
+
+\section{Selected exact outputs and hashes}\label{app:hashes}
+
+The complete interval tables contain $192$, $113$, and $807$ rows,
+respectively.  They are supplied in full rather than typeset here.  The key
+junctions are
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Certificate & First relevant interval & Final relevant interval\\
+\midrule
+Lower compressed bridge &
+$[282{,}204{,}658,495{,}014{,}629]$ &
+$[272{,}308{,}250{,}181,554{,}860{,}689{,}583]$\\
+Finite tail junction &
+$[272{,}308{,}250{,}181,554{,}860{,}689{,}583]$ &
+$[1{,}304{,}696{,}148{,}031,3{,}868{,}972{,}697{,}957]$\\
+Universal family &
+$[1{,}596{,}122{,}112{,}921,3{,}577{,}546{,}733{,}067]$ &
+all subsequent overlapping intervals\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{longtable}{@{}p{0.45\linewidth}p{0.49\linewidth}@{}}
+\caption{Selected SHA-256 values from the verified manifest.}\\
+\toprule
+File & SHA-256\\
+\midrule
+\endfirsthead
+\toprule
+File & SHA-256\\
+\midrule
+\endhead
+\code{sw4_certificate.py} &
+\code{d85678eb9a4ecb97ea3e0786eb721bd6bb7dc407fbc012775eee76a469675e1d}\\
+\code{sw4_missing_values.txt} &
+\code{c5abe94bd3405d695e42b9e8970f9a95a6ac00e138f0959290cef19ca62c349f}\\
+\code{sw4_missing_ranges.txt} &
+\code{e70a93150c71066fcc6d64e585643b3acf989d0d335a5d90c79486cd3b9f115e}\\
+\code{sw4_caterpillar_bridge_certificate.py} &
+\code{02450eadd42abd1f182a2e2c562f2886e4703a6480bed76a4ef733408230946d}\\
+\code{sw4_complete_bridge_certificate.cpp} &
+\code{05ac482d6cafd8ec999ef2c087f706aae565cfd2b5292e6271724ce111d61aaf}\\
+\code{sw4_complete_bridge_output.txt} &
+\code{549cb209c95154e49c9c50876d3cec58bb332f994321cf44edb390a287664cd3}\\
+\code{sw4_bridge_independent_check.py} &
+\code{883242643f681627e167d78c9c3b54548b786cc75d8b227424f9d20230adcfea}\\
+\code{sw4_infinite_tail_finite_overlap.cpp} &
+\code{9c25622e5253f5ea3396bd66fd88b7885b2f414c1dc06ba3974360523b9e55e9}\\
+\code{sw4_infinite_tail_finite_overlap.csv} &
+\code{c3121d3dc41ebd5bcf16f7fd7fc452abdaac27d025c09d87e5542899f6d9258b}\\
+\code{sw4_infinite_tail_certificate.py} &
+\code{ebe6f805621a58f0284f0de54bbf36b433efe7a0a633c9283a6e9fb34445ee94}\\
+\code{sw4_infinite_tail_overlaps.csv} &
+\code{9c481a07a99b05b44aa062ad7df35be9c5839fcab115359ea37e88264fc33994}\\
+\code{sw4_infinite_tail_independent_check.py} &
+\code{a58da339f5fd7013c130dfaa37d533c5b1263145678cc1152033d9ec892b9ec4}\\
+\code{sw4_central_seed_witnesses.csv} &
+\code{be4b8cf0fd7bf8c7898beb8698174246d53cf1dd3d4ab64c3d774e1836c6ef3b}\\
+\code{sw4_central_seed_capacity.csv} &
+\code{04578eb7611359b92a9af9ca6da6a5ed9548a1feaccb2d7724a5e3b0b9903c47}\\
+\code{sw4_full_seed_capacity.csv} &
+\code{645090a9d9a8b6aab7c03c2116eb1dfb0e53d00b36cf572682b7871738510bc6}\\
+\bottomrule
+\end{longtable}
+
+\begin{thebibliography}{1}
+\bibitem{supplement}
+\texttt{[AUTHOR NAME]},
+\emph{Supplementary exact certificates for the Steiner--Wiener $4$-index
+inverse problem}, accompanying reproducibility archive,
+SHA-256
+\texttt{1ed15206d460cac319b0b3683a41ade37db687ecd590a199126b08e189b47342}.
+\end{thebibliography}
+
+\end{document}
