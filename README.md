@@ -25,12 +25,13 @@ This must be treated as a **candidate result**, not as an accepted theorem, unti
 
 ## Manuscript status
 
-- `sw4_inverse_problem_paper.tex` — uploaded LaTeX manuscript source
+- `sw4_inverse_problem_paper.tex` — corrected public LaTeX manuscript source
+- `sw4_inverse_problem_paper.pdf` — compiled 21-page public manuscript
 - `sw4_self_contained_solution.md` — self-contained solution draft
 - `sw4_infinite_tail_proof.md` — standalone infinite-tail argument
 - `sw4_verification_report.md` — internal verification report
 
-**Important:** the originally uploaded LaTeX source contains placeholder author fields. The repository includes `.github/workflows/prepare-public-manuscript.yml`, which is designed to replace those placeholders with a transparent AI-provenance notice and compile `sw4_inverse_problem_paper.pdf`. Before distributing the PDF, confirm that the workflow has completed successfully and that no placeholder remains.
+The public manuscript includes a transparent AI-provenance notice, identifies Shadow as curator and public releaser, and contains no placeholder author fields.
 
 ## Verification programs
 
