@@ -1,8 +1,6 @@
 name: Prepare public candidate manuscript
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 permissions:
