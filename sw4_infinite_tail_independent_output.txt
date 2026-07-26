@@ -1,0 +1,6 @@
+PASS
+seed_witnesses_and_capacities=verified
+finite_tail_chain_rows=113
+universal_overlap_rows=807
+finite_to_universal_junction=3868972697957->1596122112921
+symbolic_overlap_h>=1171=verified_at_boundary_and_samples

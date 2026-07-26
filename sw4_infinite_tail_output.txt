@@ -1,0 +1,7 @@
+PASS
+universal_h_start=365
+universal_first_interval=1596122112921..3577546733067
+finite_overlap_check_h=365..1171
+minimum_finite_margin=1960269091932 at h=366
+symbolic_overlap_h>=1171
+universal_union_start=1596122112921

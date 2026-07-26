@@ -1,0 +1,5 @@
+PASS
+candidate e(4) = 14099
+candidate N0(4) = 80163
+exact all-tree coverage: 80164..178857
+caterpillar coverage: 178858..6572799
