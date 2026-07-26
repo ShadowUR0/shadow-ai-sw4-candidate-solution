@@ -39,49 +39,45 @@ jobs:
               "pdfauthor={Shadow (curator and public releaser)}",
           )
 
-          text = text.replace(
-              """\\title{The Steiner--Wiener $4$-Index Inverse Problem for Finite Trees:\\\\
-          A Complete Computer-Assisted Solution}
-          \\author{\\texttt{[AUTHOR NAME]}\\\\
-          \\texttt{[AFFILIATION]}\\\\
-          \\texttt{[EMAIL]}\\\\
-          ORCID: \\texttt{[ORCID]}}""",
-              """\\title{An AI-Generated Candidate Solution to the\\\\
-          Steiner--Wiener $4$-Index Inverse Problem for Finite Trees}
-          \\author{AI-generated research artifact\\\\
-          \\small Curated, archived, and publicly released by Shadow\\\\
-          \\small Released for independent mathematical verification}""",
-          )
+          title_start = text.index("\\title{")
+          date_end = text.index("\\date{}", title_start) + len("\\date{}")
+          public_title = r"""\title{An AI-Generated Candidate Solution to the\\
+Steiner--Wiener $4$-Index Inverse Problem for Finite Trees}
+\author{AI-generated research artifact\\
+\small Curated, archived, and publicly released by Shadow\\
+\small Released for independent mathematical verification}
+\date{}"""
+          text = text[:title_start] + public_title + text[date_end:]
 
           text = text.replace(
-              "We determine exactly which positive integers fail to occur\\nas such an index.  The proof combines",
-              "This manuscript presents a candidate determination of which positive integers fail to occur\\nas such an index.  The candidate proof combines",
+              "We determine exactly which positive integers fail to occur\n"
+              "as such an index.  The proof combines",
+              "This manuscript presents a candidate determination of which positive integers fail to occur\n"
+              "as such an index.  The candidate proof combines",
           )
 
           marker = "\\section*{Provenance and verification status}"
           if marker not in text:
-              text = text.replace(
-                  "\\end{abstract}\n\n\\noindent\\textbf{Keywords.}",
-                  """\\end{abstract}
+              abstract_end = "\\end{abstract}\n"
+              notice = r"""
 
-          \\section*{Provenance and verification status}
+\section*{Provenance and verification status}
 
-          The mathematical derivations, proof construction, manuscript text, source
-          code, computational certificates, and internal checks in this release were
-          generated through extended ChatGPT sessions initiated by Shadow.  Shadow
-          curated, archived, and publicly released the resulting materials, but does not
-          claim mathematical authorship and has not independently verified the proof.
-          No independent human expert review has yet been completed.
+The mathematical derivations, proof construction, manuscript text, source
+code, computational certificates, and internal checks in this release were
+generated through extended ChatGPT sessions initiated by Shadow. Shadow
+curated, archived, and publicly released the resulting materials, but does not
+claim mathematical authorship and has not independently verified the proof.
+No independent human expert review has yet been completed.
 
-          This manuscript is therefore released as an unverified candidate solution.
-          Its purpose is to provide a public, reproducible record and invite qualified
-          mathematicians to examine, reproduce, confirm, correct, or refute the claimed
-          result.  The complete public archive is available at
-          \\url{https://github.com/ShadowUR0/shadow-ai-sw4-candidate-solution}.
-
-          \\noindent\\textbf{Keywords.}""",
-                  1,
-              )
+This manuscript is therefore released as an unverified candidate solution.
+Its purpose is to provide a public, reproducible record and invite qualified
+mathematicians to examine, reproduce, confirm, correct, or refute the claimed
+result. The complete public archive is available at
+\url{https://github.com/ShadowUR0/shadow-ai-sw4-candidate-solution}.
+"""
+              pos = text.index(abstract_end) + len(abstract_end)
+              text = text[:pos] + notice + text[pos:]
 
           text = text.replace(
               "\\texttt{[AUTHOR NAME]},\n\\emph{Supplementary exact certificates",
@@ -95,8 +91,10 @@ jobs:
               "SHA-256",
           )
 
-          if "[AUTHOR NAME]" in text or "[AFFILIATION]" in text or "[ORCID]" in text:
-              raise SystemExit("Author placeholders remain after transformation")
+          placeholders = ("[AUTHOR NAME]", "[AFFILIATION]", "[EMAIL]", "[ORCID]")
+          remaining = [item for item in placeholders if item in text]
+          if remaining:
+              raise SystemExit(f"Author placeholders remain: {remaining}")
 
           path.write_text(text, encoding="utf-8")
           PY
