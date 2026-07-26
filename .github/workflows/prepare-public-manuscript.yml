@@ -1,15 +1,13 @@
-# Public manuscript preparation workflow. A repository administrator may also run it manually.
-# Triggered to prepare the corrected public manuscript and compiled PDF.
 name: Prepare public candidate manuscript
 
 on:
-  push:
+  pull_request:
     branches:
       - main
-      - organize-public-release
     paths:
-      - .github/workflows/prepare-public-manuscript.yml
+      - MANUSCRIPT_UPLOAD_REQUEST
       - sw4_inverse_problem_paper.tex
+      - .github/workflows/prepare-public-manuscript.yml
   workflow_dispatch:
 
 permissions:
@@ -17,16 +15,14 @@ permissions:
 
 jobs:
   prepare:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      !contains(github.event.head_commit.message, '[prepared-manuscript]')
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repository
+      - name: Check out pull-request branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
 
       - name: Add public provenance and candidate status
         shell: bash
@@ -109,15 +105,18 @@ result. The complete public archive is available at
           latexmk_use_xelatex: false
           args: -pdf -interaction=nonstopmode -halt-on-error
 
-      - name: Commit prepared manuscript and PDF
+      - name: Commit corrected source and PDF
         shell: bash
+        env:
+          TARGET_BRANCH: ${{ github.event.pull_request.head.ref || github.ref_name }}
         run: |
+          rm -f MANUSCRIPT_UPLOAD_REQUEST
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add sw4_inverse_problem_paper.tex sw4_inverse_problem_paper.pdf
+          git add -A sw4_inverse_problem_paper.tex sw4_inverse_problem_paper.pdf MANUSCRIPT_UPLOAD_REQUEST
           if git diff --cached --quiet; then
             echo "No manuscript changes to commit."
           else
-            git commit -m "Prepare transparent public candidate manuscript [prepared-manuscript]"
-            git push origin HEAD:${GITHUB_REF_NAME}
+            git commit -m "Add corrected public manuscript and PDF [prepared-manuscript]"
+            git push origin HEAD:"${TARGET_BRANCH}"
           fi
